@@ -1,0 +1,88 @@
+<UI>
+
+    <!-- this is the button for the popout menu that will perform the enchant -->
+    <Button name="Enchantmate_EnchantButton" mixin="Enchantmate_EnchantButtonMixin" virtual="true" inherits="SecureActionButtonTemplate">
+        <Layers>
+            <Layer level="HIGHLIGHT">
+                <Texture parentKey="highlight" atlas="search-highlight-large">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" x="0" y="0"/>
+                        <Anchor point="BOTTOMRIGHT" x="0" y="0"/>
+                    </Anchors>
+                </Texture>
+            </Layer>
+            <Layer level="OVERLAY">
+                <FontString parentKey="enchantName" inherits="GameFontNormal">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" x="0" y="0"/>
+                        <Anchor point="BOTTOMRIGHT" x="0" y="0"/>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Attributes>
+            <Attribute name="type" value="macro"/>
+        </Attributes>
+        <Scripts>
+            <OnEnter method="OnEnter"/>
+            <OnEnter method="OnLeave"/>
+        </Scripts>
+    </Button>
+
+    <!-- this the button added to the paperdoll inventory slots and is used to show the available enchants for the slot -->
+    <Button name="Enchantmate_InvSlotButton" mixin="Enchantmate_InvSlotButtonMixin" virtual="true" enableMouse="true" frameLevel="10">
+        <Size x="20" y="20"/>
+        <Layers>
+            <Layer level="ARTWORK">
+                <Texture parentKey="highlght" atlas="Garr_BuildIcon">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" x="0" y="0"/>
+                        <Anchor point="BOTTOMRIGHT" x="0" y="0"/>
+                    </Anchors>
+                </Texture>
+            </Layer>
+            <Layer level="HIGHLIGHT">
+                <Texture parentKey="highlght" atlas="garrlanding-circleglow">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" x="-2" y="2"/>
+                        <Anchor point="BOTTOMRIGHT" x="2" y="-2"/>
+                    </Anchors>
+                </Texture>
+            </Layer>
+        </Layers>
+        <Scripts>
+            <OnClick method="OnClick"/>
+        </Scripts>
+    </Button>
+
+
+    <Frame name="Enchantmate" mixin="EnchantmateMixin" parent="PaperDollItemsFrame" enableMouse="true" frameLevel="20">
+        <Size x="200" y="50"/>
+        <Anchors>
+            <Anchor point="TOPRIGHT" relativeTo="PaperDollItemsFrame" relativePoint="TOPRIGHT" x="-2" y="2"/>
+        </Anchors>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture parentKey="background" >  <!-- atlas="talenttree-chromie-background"> -->
+                    <Color a="0.9"/>
+                    <Anchors>
+                        <Anchor point="TOPLEFT" x="-2" y="2"/>
+                        <Anchor point="BOTTOMRIGHT" x="2" y="-2"/>
+                    </Anchors>
+                </Texture>
+            </Layer>
+            <Layer level="OVERLAY">
+                <FontString parentKey="enchantName" inherits="GameFontNormal" text="Enchants">
+                    <Anchors>
+                        <Anchor point="TOP" x="0" y="-6"/>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Scripts>
+            <OnEnter method="OnEnter"/>
+            <OnLeave method="OnLeave"/>
+        </Scripts>
+    </Frame>
+
+</UI>

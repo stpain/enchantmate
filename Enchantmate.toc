@@ -1,0 +1,10 @@
+## Interface: 21500
+## Title: Enchantmate
+## Notes: Enchanting helper
+## Version: 0.1
+## Author: stpain
+## SavedVariables: ENCHANTMATE_SAVED_VAR_ACCOUNT
+
+
+Enchantmate.lua
+Enchantmate.xml
