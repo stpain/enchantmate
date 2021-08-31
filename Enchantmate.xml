@@ -56,10 +56,10 @@
     </Button>
 
 
-    <Frame name="Enchantmate" mixin="EnchantmateMixin" parent="PaperDollItemsFrame" enableMouse="true" frameLevel="20">
+    <Frame name="Enchantmate_CraftMenu" mixin="Enchantmate_CraftMenuMixin" parent="PaperDollItemsFrame" enableMouse="true" frameLevel="20">
         <Size x="200" y="50"/>
         <Anchors>
-            <Anchor point="TOPRIGHT" relativeTo="PaperDollItemsFrame" relativePoint="TOPRIGHT" x="-2" y="2"/>
+            <Anchor point="TOPLEFT" relativeTo="PaperDollItemsFrame" relativePoint="TOPRIGHT" x="-2" y="2"/>
         </Anchors>
         <Layers>
             <Layer level="BACKGROUND">
@@ -72,7 +72,7 @@
                 </Texture>
             </Layer>
             <Layer level="OVERLAY">
-                <FontString parentKey="enchantName" inherits="GameFontNormal" text="Enchants">
+                <FontString parentKey="title" inherits="GameFontNormal" text="Enchants">
                     <Anchors>
                         <Anchor point="TOP" x="0" y="-6"/>
                     </Anchors>
@@ -80,8 +80,40 @@
             </Layer>
         </Layers>
         <Scripts>
+            <OnLoad method="OnLoad"/>
+            <OnEvent method="OnEvent"/>
             <OnEnter method="OnEnter"/>
             <OnLeave method="OnLeave"/>
+        </Scripts>
+    </Frame>
+
+
+    <Frame name="Enchantmate_DisenchantMenu" mixin="Enchantmate_DisenchantMenuMixin" enableMouse="true">
+        <Size x="200" y="50"/>
+        <Anchors>
+            <Anchor point="TOPLEFT" relativePoint="TOPRIGHT" x="-2" y="2"/>
+        </Anchors>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture parentKey="background" >  <!-- atlas="talenttree-chromie-background"> -->
+                    <Color a="0.9"/>
+                    <Anchors>
+                        <Anchor point="TOPLEFT" x="-2" y="2"/>
+                        <Anchor point="BOTTOMRIGHT" x="2" y="-2"/>
+                    </Anchors>
+                </Texture>
+            </Layer>
+            <Layer level="OVERLAY">
+                <FontString parentKey="title" inherits="GameFontNormal" text="Disenchant">
+                    <Anchors>
+                        <Anchor point="TOP" x="0" y="-6"/>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Scripts>
+            <OnLoad method="OnLoad"/>
+            <OnEvent method="OnEvent"/>
         </Scripts>
     </Frame>
 
