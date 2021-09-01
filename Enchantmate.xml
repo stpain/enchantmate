@@ -1,7 +1,8 @@
 <UI>
 
     <!-- this is the button for the popout menu that will perform the enchant -->
-    <Button name="Enchantmate_EnchantButton" mixin="Enchantmate_EnchantButtonMixin" virtual="true" inherits="SecureActionButtonTemplate">
+    <Button name="Enchantmate_SecureMacroButton" mixin="Enchantmate_SecureMacroButtonMixin" virtual="true" inherits="SecureActionButtonTemplate">
+        <Size y="20"/>
         <Layers>
             <Layer level="HIGHLIGHT">
                 <Texture parentKey="highlight" atlas="search-highlight-large">
@@ -12,7 +13,7 @@
                 </Texture>
             </Layer>
             <Layer level="OVERLAY">
-                <FontString parentKey="enchantName" inherits="GameFontNormal">
+                <FontString parentKey="text" inherits="GameFontNormal">
                     <Anchors>
                         <Anchor point="TOPLEFT" x="0" y="0"/>
                         <Anchor point="BOTTOMRIGHT" x="0" y="0"/>
@@ -20,12 +21,9 @@
                 </FontString>
             </Layer>
         </Layers>
-        <Attributes>
-            <Attribute name="type" value="macro"/>
-        </Attributes>
         <Scripts>
             <OnEnter method="OnEnter"/>
-            <OnEnter method="OnLeave"/>
+            <OnLeave method="OnLeave"/>
         </Scripts>
     </Button>
 
@@ -56,8 +54,24 @@
     </Button>
 
 
+    <Frame name="ListviewTemplate" mixin="ListviewMixin" virtual="true">
+        <Frames>
+            <Frame parentKey="ScrollBox" inherits="WowScrollBoxList"/>
+            <EventFrame parentKey="ScrollBar" inherits="WowTrimScrollBar">
+                <Anchors>
+                    <Anchor point="TOPRIGHT"/>
+                    <Anchor point="BOTTOMRIGHT"/>
+                </Anchors>
+            </EventFrame>
+        </Frames>
+        <Scripts>
+            <OnLoad method="OnLoad"/>
+        </Scripts>
+    </Frame>
+
+
     <Frame name="Enchantmate_CraftMenu" mixin="Enchantmate_CraftMenuMixin" parent="PaperDollItemsFrame" enableMouse="true" frameLevel="20">
-        <Size x="200" y="50"/>
+        <Size x="200" y="150"/>
         <Anchors>
             <Anchor point="TOPLEFT" relativeTo="PaperDollItemsFrame" relativePoint="TOPRIGHT" x="-2" y="2"/>
         </Anchors>
@@ -79,11 +93,16 @@
                 </FontString>
             </Layer>
         </Layers>
+        <Frames>
+            <Frame parentKey="listview" inherits="ListviewTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeKey="$parent.Inset" y="-20"/>
+                    <Anchor point="BOTTOMRIGHT" relativeKey="$parent.Inset"/>
+                </Anchors>
+            </Frame>
+        </Frames>
         <Scripts>
-            <OnLoad method="OnLoad"/>
-            <OnEvent method="OnEvent"/>
-            <OnEnter method="OnEnter"/>
-            <OnLeave method="OnLeave"/>
+            <OnUpdate method="OnUpdate"/>
         </Scripts>
     </Frame>
 
@@ -111,6 +130,14 @@
                 </FontString>
             </Layer>
         </Layers>
+        <Frames>
+            <Frame parentKey="listview" inherits="ListviewTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeKey="$parent.Inset" y="-20"/>
+                    <Anchor point="BOTTOMRIGHT" relativeKey="$parent.Inset"/>
+                </Anchors>
+            </Frame>
+        </Frames>
         <Scripts>
             <OnLoad method="OnLoad"/>
             <OnEvent method="OnEvent"/>
