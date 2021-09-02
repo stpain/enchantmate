@@ -5,6 +5,5 @@
 ## Author: stpain
 ## SavedVariables: ENCHANTMATE_SAVED_VAR_ACCOUNT
 
-
 Enchantmate.lua
 Enchantmate.xml
