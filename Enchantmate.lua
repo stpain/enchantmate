@@ -135,6 +135,9 @@ local app = {
     end,
 
     updateDisenchantMenu = function(self)
+        if not self.disenchantMenu then
+            return;
+        end
         self.disenchantMenu.listview.DataProvider:Flush()
         local equipment = self:scanPlayerBags()
         if equipment then
@@ -204,7 +207,7 @@ function Enchantmate_SecureMacroButtonMixin:Init(elementData)
 /cast %1$s
 /click %2$s
 /click StaticPopup1Button1
-/run SHA_EnchantFrame:Hide()
+/run Enchantmate_CraftMenu:Hide()
 ]], elementData.name, elementData.slot)
             self:SetAttribute("type", "macro")
             self:SetAttribute("macrotext", macro)
@@ -228,6 +231,14 @@ end
 
 
 Enchantmate_InvSlotButtonMixin = {}
+function Enchantmate_InvSlotButtonMixin:OnEnter()
+    GameTooltip:SetOwner(self, 'ANCHOR_RIGHT')
+    GameTooltip:AddLine("Enchantments")
+    GameTooltip:Show()
+end
+function Enchantmate_InvSlotButtonMixin:OnLeave()
+    GameTooltip_SetDefaultAnchor(GameTooltip, UIParent)
+end
 function Enchantmate_InvSlotButtonMixin:OnClick()
     local button = self;
     local enchants = app.getAvailableEnchantsForSlot(button.slot)
