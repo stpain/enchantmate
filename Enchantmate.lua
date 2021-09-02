@@ -42,8 +42,12 @@ local app = {
     end,
 
     getAvailableEnchantsForSlot = function(slot)
-        CraftFrame:SetAlpha(0)
-        CastSpellByName("Enchanting")
+        local hiddenScan = false;
+        if not CraftFrame:IsVisible() then
+            CraftFrame:SetAlpha(0)
+            CastSpellByName("Enchanting")
+            hiddenScan = true;
+        end
         local enchants = {}
         for i = 1, GetNumCrafts() do
             local craftName, craftSubSpellName, craftType, numAvailable, isExpanded, trainingPointCost, requiredLevel = GetCraftInfo(i)
@@ -88,10 +92,12 @@ local app = {
                 end
             end
         end
-        C_Timer.After(0.1, function()
-            CraftFrameCloseButton:Click()
-            CraftFrame:SetAlpha(1)
-        end)
+        if hiddenScan then
+            C_Timer.After(0.1, function()
+                CraftFrameCloseButton:Click()
+                CraftFrame:SetAlpha(1)
+            end)
+        end
         table.sort(enchants, function(a,b)
             return a.count > b.count
         end)
@@ -302,6 +308,8 @@ f:RegisterEvent("ADDON_LOADED")
 f:SetScript("OnEvent", function(self, event, ...)
     if ... == "Enchantmate" then
         self:UnregisterEvent("ADDON_LOADED")
-        app:init()
+        C_Timer.After(2.0, function()
+            app:init()
+        end)
     end
 end)

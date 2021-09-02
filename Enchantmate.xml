@@ -114,7 +114,7 @@
                 </Texture>
             </Layer>
             <Layer level="OVERLAY">
-                <FontString parentKey="title" inherits="GameFontNormal" text="Enchants">
+                <FontString parentKey="title" inherits="GameFontNormalLarge" text="Enchantments">
                     <Color r="1" g="1" b="1"/>
                     <Anchors>
                         <Anchor point="TOP" x="0" y="-6"/>
@@ -150,6 +150,8 @@
                         <Anchor point="BOTTOMRIGHT" x="0" y="0"/>
                     </Anchors>
                 </Texture>
+            </Layer>
+            <Layer level="ARTWORK">
                 <Texture parentKey="topLeft" atlas="UI-CharacterCreate-Metal-Small-Finery" useAtlasSize="true">
                     <Anchors>
                         <Anchor point="TOPLEFT" x="-5" y="5"/>
@@ -176,7 +178,7 @@
                 </Texture>
             </Layer>
             <Layer level="OVERLAY">
-                <FontString parentKey="title" inherits="GameFontNormal" text="Disenchant">
+                <FontString parentKey="title" inherits="GameFontNormalLarge" text="Disenchant">
                     <Color r="1" g="1" b="1"/>
                     <Anchors>
                         <Anchor point="TOP" x="0" y="-12"/>
