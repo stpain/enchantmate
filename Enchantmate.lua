@@ -13,7 +13,11 @@ disenchant spell on that item.
 
 ]]
 
+local ENCHANTING = "Enchanting";
+
 local app = {
+
+    enchantCastedID = false,
 
     -- not used yet
     colours = {
@@ -23,22 +27,82 @@ local app = {
     },
 
     characterInvSlots = {
-        { invSlot = "CharacterBackSlot", enchants = "Enchant Cloak" },
-        { invSlot = "CharacterChestSlot", enchants = "Enchant Chest" },
-        { invSlot = "CharacterWristSlot", enchants = "Enchant Bracer" },
-        { invSlot = "CharacterHandsSlot", enchants = "Enchant Gloves" },
-        { invSlot = "CharacterFeetSlot", enchants = "Enchant Boots" },
-        { invSlot = "CharacterFinger0Slot", enchants = "Enchant Ring" },
-        { invSlot = "CharacterFinger1Slot", enchants = "Enchant Ring" },
-        { invSlot = "CharacterMainHandSlot", enchants = { "Enchant Weapon", "Enchant 2H Weapon" } },
-        { invSlot = "CharacterSecondaryHandSlot", enchants = { "Enchant Weapon", "Enchant Shield" } },
+        { 
+            invSlot = "CharacterBackSlot",
+            enchants_Classic = "Enchant Cloak",
+            enchants_Retail = "Cloak Enchantments",
+        },
+        { 
+            invSlot = "CharacterChestSlot", 
+            enchants_Classic = "Enchant Chest",
+            enchants_Retail = "Chest Enchantments",
+            
+        },
+        { 
+            invSlot = "CharacterWristSlot", 
+            enchants_Classic = "Enchant Bracer",
+            enchants_Retail = "Bracer Enchantments",
+        },
+        { 
+            invSlot = "CharacterHandsSlot", 
+            enchants_Classic = "Enchant Gloves",
+            enchants_Retail = "Glove Enchantments",
+        },
+        { 
+            invSlot = "CharacterFeetSlot", 
+            enchants_Classic = "Enchant Boots",
+            enchants_Retail = "Boot Enchantments",
+        },
+        { 
+            invSlot = "CharacterFinger0Slot", 
+            enchants_Classic = "Enchant Ring",
+            enchants_Retail = "Ring Enchantments",
+        },
+        { 
+            invSlot = "CharacterFinger1Slot", 
+            enchants_Classic = "Enchant Ring",
+            enchants_Retail = "Ring Enchantments",
+        },
+        { 
+            invSlot = "CharacterMainHandSlot", 
+            enchants_Classic = { 
+                "Enchant Weapon", 
+                "Enchant 2H Weapon" 
+            },
+            enchants_Retail = "Weapon Enchantments",
+        },
+        { 
+            invSlot = "CharacterSecondaryHandSlot", 
+            enchants_Classic = { 
+                "Enchant Weapon", 
+                "Enchant Shield" 
+            },
+            enchants_Retail = {
+                "Weapon Enchantments",
+                "Shield Enchantments",
+            }
+        },
     },
 
+    isC_TradeSkillUI = function()
+        if C_TradeSkillUI then
+            return true;
+        end
+        return false;
+    end,
+
     isEnchanter = function()
-        for i = 1, GetNumSkillLines() do
-            local skill, _, _, level, _, _, _, _, _, _, _, _, _ = GetSkillLineInfo(i)
-            if skill == "Enchanting" then
+        if C_TradeSkillUI then
+            local prof1, prof2, archaeology, fishing, cooking = GetProfessions()
+            if GetProfessionInfo(prof1) == ENCHANTING or GetProfessionInfo(prof2) == ENCHANTING then
                 return true;
+            end
+        else
+            for i = 1, GetNumSkillLines() do
+                local skill, _, _, level, _, _, _, _, _, _, _, _, _ = GetSkillLineInfo(i)
+                if skill == ENCHANTING then
+                    return true;
+                end
             end
         end
         return false;
@@ -53,11 +117,73 @@ local app = {
         return false, "";
     end,
 
-    getAvailableEnchantsForSlot = function(slot)
+    getAvailableEnchantsForSlot_Retail = function(slot)
+        local hiddenScan = false;
+        if not TradeSkillFrame:IsVisible() then
+            TradeSkillFrame:SetAlpha(0)
+            CastSpellByName(ENCHANTING)
+            hiddenScan = true;
+        end
+        local enchants = {}
+        for _, id in pairs(C_TradeSkillUI.GetAllRecipeIDs()) do
+            local recipeInfo = C_TradeSkillUI.GetRecipeInfo(id)
+            local reagents = {}
+            if recipeInfo.learned then
+                local enchantFound = false;
+                local category = C_TradeSkillUI.GetCategoryInfo(recipeInfo.categoryID).name
+                if category then
+                    if type(slot.enchants_Retail) == "table" then
+                        for _, enchant in ipairs(slot.enchants_Retail) do
+                            if category:find(enchant) then
+                                enchantFound = true
+                            end
+                        end
+                    else
+                        if category:find(slot.enchants_Retail) then
+                            enchantFound = true;
+                        end
+                    end
+                    if enchantFound then
+                        for i = 1, C_TradeSkillUI.GetRecipeNumReagents(id) do
+                            local name, icon, reagentCount, playerReagentCount = C_TradeSkillUI.GetRecipeReagentInfo(id, i)
+                            local itemLink = C_TradeSkillUI.GetRecipeReagentItemLink(id, i)
+                            if reagentCount and itemLink then
+                                table.insert(reagents, {
+                                    link = itemLink,
+                                    count = reagentCount
+                                })
+                            end
+                        end
+                        table.insert(enchants, {
+                            type = "enchant",
+                            name = recipeInfo.name,
+                            count = recipeInfo.numAvailable,
+                            slot = slot.invSlot,
+                            itemID = recipeInfo.recipeID,
+                            difficulty = recipeInfo.difficulty,
+                            reagents = reagents,
+                        })
+                    end
+                end
+            end
+        end
+        if hiddenScan then
+            C_Timer.After(0.1, function()
+                TradeSkillFrameCloseButton:Click()
+                TradeSkillFrame:SetAlpha(1)
+            end)
+        end
+        table.sort(enchants, function(a,b)
+            return a.count > b.count
+        end)
+        return enchants;
+    end,
+
+    getAvailableEnchantsForSlot_Classic = function(slot)
         local hiddenScan = false;
         if not CraftFrame:IsVisible() then
             CraftFrame:SetAlpha(0)
-            CastSpellByName("Enchanting")
+            CastSpellByName(ENCHANTING)
             hiddenScan = true;
         end
         local enchants = {}
@@ -81,13 +207,13 @@ local app = {
                 end
                 local enchantFound = false;
                 if type(slot.enchants) == "table" then
-                    for _, enchant in ipairs(slot.enchants) do
+                    for _, enchant in ipairs(slot.enchants_Classic) do
                         if craftName:find(enchant) then
                             enchantFound = true
                         end
                     end
                 else
-                    if craftName:find(slot.enchants) then
+                    if craftName:find(slot.enchants_Classic) then
                         enchantFound = true;
                     end
                 end
@@ -98,7 +224,7 @@ local app = {
                         count = numAvailable,
                         slot = slot.invSlot,
                         itemID = itemID,
-                        typeID = craftType,
+                        difficulty = craftType,
                         reagents = reagents,
                     })
                 end
@@ -165,30 +291,49 @@ local app = {
         end
     end,
 
-    init = function(self)
-        if not CraftFrame then
-            LoadAddOn("Blizzard_CraftUI")
-        end
-        if not self.isEnchanter() then
-            return;
-        end
+    setupCharacterInvSlotButtons = function(self)
         for _, slot in ipairs(self.characterInvSlots) do
             local b = CreateFrame("BUTTON", "CraftCreateButton_"..slot.invSlot, PaperDollItemsFrame, "Enchantmate_InvSlotButton")
             b:SetPoint("BOTTOMRIGHT", slot.invSlot, "BOTTOMRIGHT", 5, -5)
             b.slot = slot
         end
+    end,
+
+    init = function(self)
+        if not self.isEnchanter() then
+            return;
+        end
         self.enchantMenu = Enchantmate_CraftMenu;
-
         self.disenchantMenu = Enchantmate_DisenchantMenu
-
-        self.disenchantMenu:ClearAllPoints()
-        self.disenchantMenu:SetParent(CraftFrame)
-        self.disenchantMenu:SetPoint("TOPLEFT", CraftFrame, "TOPRIGHT", 10, -10)
         self.disenchantMenu:SetSize(200, 300)
 
-        CraftFrame:HookScript("OnShow", function()
-            self:updateDisenchantMenu()
-        end)
+        self:setupCharacterInvSlotButtons()
+
+        if not C_TradeSkillUI then
+            if not CraftFrame then
+                LoadAddOn("Blizzard_CraftUI")
+            end
+            CraftFrame:HookScript("OnShow", function()
+                self:updateDisenchantMenu()
+            end)    
+            self.disenchantMenu:ClearAllPoints()
+            self.disenchantMenu:SetParent(CraftFrame)
+            self.disenchantMenu:SetPoint("TOPLEFT", CraftFrame, "TOPRIGHT", 10, -10)
+            
+        else
+            if not TradeSkillFrame then
+                LoadAddOn("Blizzard_TradeSkillUI")
+            end
+            TradeSkillFrame:HookScript("OnShow", function()
+                if not TradeSkillFrameTitleText:GetText() == ENCHANTING then
+                    return;
+                end
+                self:updateDisenchantMenu()
+            end)
+            self.disenchantMenu:ClearAllPoints()
+            self.disenchantMenu:SetParent(TradeSkillFrame)
+            self.disenchantMenu:SetPoint("TOPLEFT", TradeSkillFrame, "TOPRIGHT", 10, -10)
+        end
     end,
 }
 
@@ -221,14 +366,31 @@ function Enchantmate_SecureMacroButtonMixin:Init(elementData)
     if elementData.type == "enchant" then
         self.text:SetText(elementData.count > 0 and elementData.name or "|cff666666"..elementData.name)
         if elementData.count > 0 then
-            local macro = string.format([[
+            local macro_Classic = string.format([[
 /cast %1$s
 /click %2$s
 /click StaticPopup1Button1
 /run Enchantmate_CraftMenu:Hide()
 ]], elementData.name, elementData.slot)
+
+            local macro_Retail = string.format([[
+/run TradeSkillFrame:SetAlpha(0)
+/cast %1$s
+/run C_TradeSkillUI.CraftRecipe(%2$s)
+/click %3$s
+/click StaticPopup1Button1
+/cast %4$s
+/run TradeSkillFrame:SetAlpha(1)
+]], ENCHANTING, elementData.itemID, elementData.slot, ENCHANTING)
+
             self:SetAttribute("type", "macro")
-            self:SetAttribute("macrotext", macro)
+
+            if not C_TradeSkillUI then
+                self:SetAttribute("macrotext", macro_Classic)
+            else
+                self:SetAttribute("macrotext", macro_Retail)
+            end
+
         else
             local macro = string.format([[/run print("Enchantmate: unable to craft %s")]], elementData.name)
             self:SetAttribute("type", "macro")
@@ -260,14 +422,21 @@ function Enchantmate_InvSlotButtonMixin:OnLeave()
 end
 function Enchantmate_InvSlotButtonMixin:OnClick()
     local button = self;
-    local enchants = app.getAvailableEnchantsForSlot(button.slot)
-    app.enchantMenu.listview.DataProvider:Flush()
-    for k, enchant in ipairs(enchants) do
-        app.enchantMenu.listview.DataProvider:Insert(enchant)
+    local enchants;
+    if not app.isC_TradeSkillUI() then
+        enchants = app.getAvailableEnchantsForSlot_Classic(button.slot)
+    else
+        enchants = app.getAvailableEnchantsForSlot_Retail(button.slot)
     end
-    app.enchantMenu:Show()
-    app.enchantMenu:ClearAllPoints()
-    app.enchantMenu:SetPoint("LEFT", button, "RIGHT", -20, 0)
+    app.enchantMenu.listview.DataProvider:Flush()
+    if enchants then
+        for k, enchant in ipairs(enchants) do
+            app.enchantMenu.listview.DataProvider:Insert(enchant)
+        end
+        app.enchantMenu:Show()
+        app.enchantMenu:ClearAllPoints()
+        app.enchantMenu:SetPoint("LEFT", button, "RIGHT", -20, 0)
+    end
 end
 --#endregion
 

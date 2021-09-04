@@ -72,7 +72,7 @@
     </Frame>
 
 
-    <Frame name="Enchantmate_CraftMenu" mixin="Enchantmate_CraftMenuMixin" parent="PaperDollItemsFrame" enableMouse="true" frameLevel="20">
+    <Frame name="Enchantmate_CraftMenu" mixin="Enchantmate_CraftMenuMixin" parent="PaperDollItemsFrame" enableMouse="true" frameLevel="1000">
         <Size x="200" y="150"/>
         <Anchors>
             <Anchor point="TOPLEFT" relativeTo="PaperDollItemsFrame" relativePoint="TOPRIGHT" x="-2" y="2"/>
