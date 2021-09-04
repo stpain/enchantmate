@@ -80,7 +80,7 @@
         <Layers>
             <Layer level="BACKGROUND">
                 <Texture parentKey="background" >  <!-- atlas="talenttree-chromie-background"> -->
-                    <Color a="0.8"/>
+                    <Color a="0.9"/>
                     <Anchors>
                         <Anchor point="TOPLEFT" x="0" y="0"/>
                         <Anchor point="BOTTOMRIGHT" x="0" y="0"/>

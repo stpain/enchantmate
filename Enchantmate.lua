@@ -1,15 +1,27 @@
 
 
-local colours = {
-    Blue = CreateColor(0.1, 0.58, 0.92, 1),
-    Orange = CreateColor(0.79, 0.6, 0.15, 1),
-    Yellow = CreateColor(1.0, 0.82, 0, 1),
-}
+--[[
 
+Enchantmate is a simple addon that makes enchanting and disenchanting easier.
+The addon adds a small button to each inventory slot that can be enchanted, this
+will open a popout menu with all the available enchants for that slot. Clicking 
+an enchant from the menu will cause the player character to cast that enchant spell.
 
+Disenchanting is made easier by adding an extra window to the enchaning UI, this 
+will show a list of equipment in the players bags. Clicking an item will cast the 
+disenchant spell on that item.
+
+]]
 
 local app = {
-    
+
+    -- not used yet
+    colours = {
+        Blue = CreateColor(0.1, 0.58, 0.92, 1),
+        Orange = CreateColor(0.79, 0.6, 0.15, 1),
+        Yellow = CreateColor(1.0, 0.82, 0, 1),
+    },
+
     characterInvSlots = {
         { invSlot = "CharacterBackSlot", enchants = "Enchant Cloak" },
         { invSlot = "CharacterChestSlot", enchants = "Enchant Chest" },
@@ -236,6 +248,7 @@ function Enchantmate_SecureMacroButtonMixin:Init(elementData)
 end
 
 
+--#region Paperdoll inv slot buttons
 Enchantmate_InvSlotButtonMixin = {}
 function Enchantmate_InvSlotButtonMixin:OnEnter()
     GameTooltip:SetOwner(self, 'ANCHOR_RIGHT')
@@ -256,6 +269,7 @@ function Enchantmate_InvSlotButtonMixin:OnClick()
     app.enchantMenu:ClearAllPoints()
     app.enchantMenu:SetPoint("LEFT", button, "RIGHT", -20, 0)
 end
+--#endregion
 
 
 ListviewMixin = {};
@@ -283,14 +297,12 @@ function ListviewMixin:OnLoad()
 end
 
 
-
 Enchantmate_CraftMenuMixin = {}
 function Enchantmate_CraftMenuMixin:OnUpdate()
     if not self:IsMouseOver() then
         self:Hide()
     end
 end
-
 
 
 Enchantmate_DisenchantMenuMixin = {}
@@ -303,6 +315,8 @@ function Enchantmate_DisenchantMenuMixin:OnEvent(event, ...)
     end
 end
 
+
+--- this could have been added to a menu frame
 local f = CreateFrame("FRAME")
 f:RegisterEvent("ADDON_LOADED")
 f:SetScript("OnEvent", function(self, event, ...)
