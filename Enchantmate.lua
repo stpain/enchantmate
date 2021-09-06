@@ -94,7 +94,7 @@ local app = {
     isEnchanter = function()
         if C_TradeSkillUI then
             local prof1, prof2, archaeology, fishing, cooking = GetProfessions()
-            if GetProfessionInfo(prof1) == ENCHANTING or GetProfessionInfo(prof2) == ENCHANTING then
+            if (prof1 and (GetProfessionInfo(prof1) == ENCHANTING)) or (prof2 and (GetProfessionInfo(prof2) == ENCHANTING)) then
                 return true;
             end
         else
@@ -206,7 +206,7 @@ local app = {
                     end
                 end
                 local enchantFound = false;
-                if type(slot.enchants) == "table" then
+                if type(slot.enchants_Classic) == "table" then
                     for _, enchant in ipairs(slot.enchants_Classic) do
                         if craftName:find(enchant) then
                             enchantFound = true
@@ -325,10 +325,12 @@ local app = {
                 LoadAddOn("Blizzard_TradeSkillUI")
             end
             TradeSkillFrame:HookScript("OnShow", function()
-                if not TradeSkillFrameTitleText:GetText() == ENCHANTING then
-                    return;
+                if C_TradeSkillUI.GetTradeSkillLine() == 333 then
+                    self.disenchantMenu:Show()
+                    self:updateDisenchantMenu()
+                else
+                    self.disenchantMenu:Hide()
                 end
-                self:updateDisenchantMenu()
             end)
             self.disenchantMenu:ClearAllPoints()
             self.disenchantMenu:SetParent(TradeSkillFrame)
