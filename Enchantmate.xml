@@ -56,7 +56,7 @@
     </Button>
 
 
-    <Frame name="ListviewTemplate" mixin="ListviewMixin" virtual="true">
+    <Frame name="Enchantmate_ListviewTemplate" mixin="Enchantmate_ListviewMixin" virtual="true">
         <Frames>
             <Frame parentKey="ScrollBox" inherits="WowScrollBoxList"/>
             <EventFrame parentKey="ScrollBar" inherits="WowTrimScrollBar">
