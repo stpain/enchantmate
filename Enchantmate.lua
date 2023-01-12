@@ -451,8 +451,8 @@ end
 --#endregion
 
 
-ListviewMixin = {};
-function ListviewMixin:OnLoad()
+Enchantmate_ListviewMixin = {};
+function Enchantmate_ListviewMixin:OnLoad()
     self.DataProvider = CreateDataProvider();
     self.ScrollView = CreateScrollBoxListLinearView();
     self.ScrollView:SetDataProvider(self.DataProvider);
