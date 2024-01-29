@@ -1,14 +1,12 @@
 {
     "Lua.diagnostics.globals": [
         "GameTooltip_SetDefaultAnchor",
-        "GameTooltip",
         "ScrollUtil",
         "CreateDataProvider",
         "CreateScrollBoxListLinearView",
         "CreateAnchor",
-        "PaperDollItemsFrame"
-    ],
-    "Lua.diagnostics.disable": [
-        "param-type-mismatch"
+        "PaperDollItemsFrame",
+        "NineSliceUtil",
+        "NineSliceLayouts"
     ]
 }

@@ -15,6 +15,30 @@ disenchant spell on that item.
 
 local ENCHANTING = "Enchanting";
 
+local layouts = {
+    GenericMetal = {
+		TopLeftCorner =	{ atlas = "UI-Frame-GenericMetal-Corner", x = -6, y = 6, mirrorLayout = true, },
+		TopRightCorner =	{ atlas = "UI-Frame-GenericMetal-Corner", x = 6, y = 6, mirrorLayout = true, },
+		BottomLeftCorner =	{ atlas = "UI-Frame-GenericMetal-Corner", x = -6, y = -6, mirrorLayout = true, },
+		BottomRightCorner =	{ atlas = "UI-Frame-GenericMetal-Corner", x = 6, y = -6, mirrorLayout = true, },
+		TopEdge = { atlas = "_UI-Frame-GenericMetal-EdgeTop", },
+		BottomEdge = { atlas = "_UI-Frame-GenericMetal-EdgeBottom", },
+		LeftEdge = { atlas = "!UI-Frame-GenericMetal-EdgeLeft", },
+		RightEdge = { atlas = "!UI-Frame-GenericMetal-EdgeRight", },
+	},
+    DarkTooltip = {
+        TopLeftCorner =	{ atlas = "ChatBubble-NineSlice-CornerTopLeft", x = -2, y = 2, },
+        TopRightCorner =	{ atlas = "ChatBubble-NineSlice-CornerTopRight", x = 2, y = 2, },
+        BottomLeftCorner =	{ atlas = "ChatBubble-NineSlice-CornerBottomLeft", x = -2, y = -2, },
+        BottomRightCorner =	{ atlas = "ChatBubble-NineSlice-CornerBottomRight", x = 2, y = -2, },
+        TopEdge = { atlas = "_ChatBubble-NineSlice-EdgeTop", },
+        BottomEdge = { atlas = "_ChatBubble-NineSlice-EdgeBottom"},
+        LeftEdge = { atlas = "!ChatBubble-NineSlice-EdgeLeft", },
+        RightEdge = { atlas = "!ChatBubble-NineSlice-EdgeRight", },
+        Center = { atlas = "ChatBubble-NineSlice-Center", },
+	},
+}
+
 local app = {
 
     enchantCastedID = false,
@@ -180,6 +204,71 @@ local app = {
         return enchants;
     end,
 
+    getAvailableEnchantsForSlot_Era = function(slot)
+        local hiddenScan = false;
+        if not CraftFrame:IsVisible() then
+            CraftFrame:SetAlpha(0)
+            CastSpellByName(ENCHANTING)
+            hiddenScan = true;
+        end
+        local enchants = {}
+        for i = 1, GetNumCrafts() do
+            local craftName, craftSubSpellName, craftType, numAvailable, isExpanded = GetCraftInfo(i)
+            if (craftType == "optimal" or craftType == "medium" or craftType == "easy" or craftType == "trivial") then -- this is to make sure we only get enchants the player knows
+                local link = GetCraftItemLink(i)
+                local numReagents = GetCraftNumReagents(i);
+                local reagents = {}
+                if numReagents > 0 then
+                    for j = 1, numReagents do
+                        local _, _, reagentCount = GetCraftReagentInfo(i, j)
+                        local reagentLink = GetCraftReagentItemLink(i, j)
+                        if reagentLink and reagentCount then
+                            table.insert(reagents, {
+                                link = reagentLink,
+                                count = reagentCount,
+                            })
+                        end
+                    end
+                end
+                local enchantFound = false;
+                if type(slot.enchants_Classic) == "table" then
+                    for _, enchant in ipairs(slot.enchants_Classic) do
+                        if craftName:find(enchant) then
+                            enchantFound = true
+                        end
+                    end
+                else
+                    if craftName:find(slot.enchants_Classic) then
+                        enchantFound = true;
+                    end
+                end
+                if enchantFound then
+                    table.insert(enchants, {
+                        type = "enchant",
+                        name = craftName,
+                        index = i,
+                        count = numAvailable,
+                        slot = slot.invSlot,
+                        --itemID = itemID,
+                        difficulty = craftType,
+                        reagents = reagents,
+                        link = link,
+                    })
+                end
+            end
+        end
+        if hiddenScan then
+            C_Timer.After(0.1, function()
+                CraftFrameCloseButton:Click()
+                CraftFrame:SetAlpha(1)
+            end)
+        end
+        table.sort(enchants, function(a,b)
+            return a.count > b.count
+        end)
+        return enchants;
+    end,
+
     getAvailableEnchantsForSlot_Wrath = function(slot)
         local hiddenScan = false;
         if not TradeSkillFrame:IsVisible() then
@@ -248,28 +337,28 @@ local app = {
     scanPlayerBags = function(self)
         local equipment, equipmentAdded = {}, {}
         for bag = 0, 4 do
-            for slot = 1, GetContainerNumSlots(bag) do
-                local icon, itemCount, _, quality, _, _, itemLink, _, _, itemID = GetContainerItemInfo(bag, slot)
-                if itemID then
-                    local _, _, _, _, icon, itemClassID, itemSubClassID = GetItemInfoInstant(itemID)
-                    local _, _, _, itemLevel = GetItemInfo(itemID)
-                    if (itemClassID == 2 or itemClassID == 4) and quality > 1 then
-                        local haveName, fullName = self.getItemFullNameFromLink(itemLink)
+            for slot = 1, C_Container.GetContainerNumSlots(bag) do
+                local slotInfo = C_Container.GetContainerItemInfo(bag, slot)
+                if slotInfo and slotInfo.itemID then
+                    local _, _, _, _, icon, itemClassID, itemSubClassID = GetItemInfoInstant(slotInfo.itemID)
+                    local _, _, _, itemLevel = GetItemInfo(slotInfo.itemID)
+                    if (itemClassID == 2 or itemClassID == 4) and (slotInfo.quality > 1) then
+                        local haveName, fullName = self.getItemFullNameFromLink(slotInfo.hyperlink)
                         if haveName then
-                            if not equipmentAdded[itemLink] then
+                            if not equipmentAdded[slotInfo.hyperlink] then
                                 table.insert(equipment, {
                                     type = "disenchant",
                                     icon = icon,
-                                    link = itemLink,
-                                    count = itemCount,
+                                    link = slotInfo.hyperlink,
+                                    count = slotInfo.stackCount,
                                     name = fullName,
                                     ilvl = itemLevel or -1,
                                 })
-                                equipmentAdded[itemLink] = true;
+                                equipmentAdded[slotInfo.hyperlink] = true;
                             else
                                 for _, gear in ipairs(equipment) do
-                                    if gear.link == itemLink then
-                                        gear.count = gear.count + itemCount;
+                                    if gear.link == slotInfo.hyperlink then
+                                        gear.count = gear.count + slotInfo.stackCount;
                                     end
                                 end
                             end
@@ -286,10 +375,54 @@ local app = {
             return;
         end
         self.disenchantMenu.listview.DataProvider:Flush()
-        local equipment = self:scanPlayerBags()
-        if equipment then
-            for k, item in ipairs(equipment) do
-                self.disenchantMenu.listview.DataProvider:Insert(item)
+        --local equipment = self:scanPlayerBags()
+
+        self.disenchantMenu:SetHeight(30)
+
+        local equipment, equipmentAdded = {}, {}
+        for bag = 0, 4 do
+            for slot = 1, C_Container.GetContainerNumSlots(bag) do
+                local slotInfo = C_Container.GetContainerItemInfo(bag, slot)
+                if slotInfo and slotInfo.itemID and slotInfo.quality then
+
+                    local item = Item:CreateFromItemID(slotInfo.itemID)
+                    if not item:IsItemEmpty() then
+                        item:ContinueOnItemLoad(function()
+                        
+                            local itemName = item:GetItemName()
+
+                            local _, _, _, _, icon, itemClassID, itemSubClassID = GetItemInfoInstant(slotInfo.itemID)
+                            local _, _, quality, itemLevel = GetItemInfo(slotInfo.itemID)
+                            if (itemClassID == 2 or itemClassID == 4) and (slotInfo.quality > 1) then
+
+                                if not equipmentAdded[slotInfo.hyperlink] then
+                                    table.insert(equipment, {
+                                        type = "disenchant",
+                                        icon = icon,
+                                        link = slotInfo.hyperlink,
+                                        count = slotInfo.stackCount,
+                                        name = itemName,
+                                        ilvl = itemLevel or -1,
+                                    })
+                                    equipmentAdded[slotInfo.hyperlink] = true;
+                                    self.disenchantMenu.listview.DataProvider:Insert(equipment[#equipment])
+
+                                    if #equipment > 15 then
+                                        self.disenchantMenu:SetHeight(30 + (14 * 20))
+                                    else
+                                        self.disenchantMenu:SetHeight(30 + (#equipment * 20))
+                                    end
+                                else
+                                    for _, gear in ipairs(equipment) do
+                                        if gear.link == slotInfo.hyperlink then
+                                            gear.count = gear.count + slotInfo.stackCount;
+                                        end
+                                    end
+                                end
+                            end
+                        end)
+                    end
+                end
             end
         end
     end,
@@ -308,24 +441,45 @@ local app = {
         end
         self.enchantMenu = Enchantmate_CraftMenu;
         self.disenchantMenu = Enchantmate_DisenchantMenu
-        self.disenchantMenu:SetSize(200, 300)
+        self.disenchantMenu:SetSize(350, 600)
 
         self:setupCharacterInvSlotButtons()
 
-        if not TradeSkillFrame then
-            LoadAddOn("Blizzard_TradeSkillUI")
-        end
-        TradeSkillFrame:HookScript("OnShow", function()
-            if TradeSkillFrameTitleText:GetText() == "Enchanting" then
-                self.disenchantMenu:Show()
-                self:updateDisenchantMenu()
-            else
-                self.disenchantMenu:Hide()
+        NineSliceUtil.ApplyLayout(self.enchantMenu, layouts.DarkTooltip)
+        NineSliceUtil.ApplyLayout(self.disenchantMenu, layouts.DarkTooltip)
+
+        if WOW_PROJECT_ID == WOW_PROJECT_CLASSIC then
+            if not CraftFrame then
+                LoadAddOn("Blizzard_CraftUI")
             end
-        end)
-        self.disenchantMenu:ClearAllPoints()
-        self.disenchantMenu:SetParent(TradeSkillFrame)
-        self.disenchantMenu:SetPoint("TOPLEFT", TradeSkillFrame, "TOPRIGHT", 10, -10)
+            CraftFrame:HookScript("OnShow", function()
+                if CraftFrameTitleText:GetText() == ENCHANTING then
+                    self.disenchantMenu:Show()
+                    self:updateDisenchantMenu()
+                else
+                    self.disenchantMenu:Hide()
+                end
+            end)
+            self.disenchantMenu:ClearAllPoints()
+            self.disenchantMenu:SetParent(CraftFrame)
+            self.disenchantMenu:SetPoint("TOPLEFT", CraftFrame, "TOPRIGHT", 10, -10)
+
+        else
+            if not TradeSkillFrame then
+                LoadAddOn("Blizzard_TradeSkillUI")
+            end
+            TradeSkillFrame:HookScript("OnShow", function()
+                if TradeSkillFrameTitleText:GetText() == "Enchanting" then
+                    self.disenchantMenu:Show()
+                    self:updateDisenchantMenu()
+                else
+                    self.disenchantMenu:Hide()
+                end
+            end)
+            self.disenchantMenu:ClearAllPoints()
+            self.disenchantMenu:SetParent(TradeSkillFrame)
+            self.disenchantMenu:SetPoint("TOPLEFT", TradeSkillFrame, "TOPRIGHT", 10, -10)
+        end
     end,
 }
 
@@ -378,6 +532,10 @@ function Enchantmate_SecureMacroButtonMixin:Init(elementData)
 
                 self:SetAttribute("macrotext", macro_Retail)
                 
+
+
+
+
             elseif WOW_PROJECT_ID == WOW_PROJECT_CLASSIC then
 
                 local macro_Classic = string.format([[
@@ -388,6 +546,10 @@ function Enchantmate_SecureMacroButtonMixin:Init(elementData)
 ]], elementData.name, elementData.slot)
 
                 self:SetAttribute("macrotext", macro_Classic)
+
+
+
+
 
             elseif WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC then
 
@@ -435,8 +597,15 @@ end
 function Enchantmate_InvSlotButtonMixin:OnClick()
     local button = self;
     local enchants;
-    if WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC then
+
+    
+
+    if WOW_PROJECT_ID == WOW_PROJECT_CLASSIC then
+        enchants = app.getAvailableEnchantsForSlot_Era(button.slot)
+
+    elseif WOW_PROJECT_ID ==  WOW_PROJECT_WRATH_CLASSIC then
         enchants = app.getAvailableEnchantsForSlot_Wrath(button.slot)
+
     else
         enchants = app.getAvailableEnchantsForSlot_Retail(button.slot)
     end
@@ -457,7 +626,7 @@ function Enchantmate_ListviewMixin:OnLoad()
     self.ScrollView = CreateScrollBoxListLinearView();
     self.ScrollView:SetDataProvider(self.DataProvider);
     self.ScrollView:SetElementExtent(21); -- item height
-    self.ScrollView:SetElementInitializer("Button", "Enchantmate_SecureMacroButton", function(frame, elementData)
+    self.ScrollView:SetElementInitializer("Enchantmate_SecureMacroButton", function(frame, elementData)
         frame:Init(elementData)
     end);
     self.ScrollView:SetPadding(10, 10, 10, 10, 5);
