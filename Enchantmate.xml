@@ -79,15 +79,15 @@
         </Anchors>
         <Layers>
             <Layer level="BACKGROUND">
-                <Texture parentKey="background" >  <!-- atlas="talenttree-chromie-background"> -->
+                <Texture parentKey="background" >
                     <Color a="0.9"/>
                     <Anchors>
-                        <Anchor point="TOPLEFT" x="0" y="0"/>
-                        <Anchor point="BOTTOMRIGHT" x="0" y="0"/>
+                        <Anchor point="TOPLEFT" x="3" y="-3"/>
+                        <Anchor point="BOTTOMRIGHT" x="-3" y="3"/>
                     </Anchors>
                 </Texture>
             </Layer>
-            <Layer level="ARTWORK">
+            <!-- <Layer level="ARTWORK">
                 <Texture parentKey="topLeft" atlas="UI-CharacterCreate-Metal-Small-Finery" useAtlasSize="true">
                     <Anchors>
                         <Anchor point="TOPLEFT" x="-5" y="5"/>
@@ -112,7 +112,7 @@
                     </Anchors>
                     <TexCoords left="1.0" right="0.0" top="1.0" bottom="0.0"/>
                 </Texture>
-            </Layer>
+            </Layer> -->
             <Layer level="OVERLAY">
                 <FontString parentKey="title" inherits="GameFontNormalLarge" text="Enchantments">
                     <Color r="1" g="1" b="1"/>
@@ -146,12 +146,12 @@
                 <Texture parentKey="background">
                     <Color a="0.9"/>
                     <Anchors>
-                        <Anchor point="TOPLEFT" x="0" y="0"/>
-                        <Anchor point="BOTTOMRIGHT" x="0" y="0"/>
+                        <Anchor point="TOPLEFT" x="3" y="-3"/>
+                        <Anchor point="BOTTOMRIGHT" x="-3" y="3"/>
                     </Anchors>
                 </Texture>
             </Layer>
-            <Layer level="ARTWORK">
+            <!-- <Layer level="ARTWORK">
                 <Texture parentKey="topLeft" atlas="UI-CharacterCreate-Metal-Small-Finery" useAtlasSize="true">
                     <Anchors>
                         <Anchor point="TOPLEFT" x="-5" y="5"/>
@@ -176,7 +176,7 @@
                     </Anchors>
                     <TexCoords left="1.0" right="0.0" top="1.0" bottom="0.0"/>
                 </Texture>
-            </Layer>
+            </Layer> -->
             <Layer level="OVERLAY">
                 <FontString parentKey="title" inherits="GameFontNormalLarge" text="Disenchant">
                     <Color r="1" g="1" b="1"/>

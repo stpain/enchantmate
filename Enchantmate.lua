@@ -403,14 +403,16 @@ local app = {
                                         count = slotInfo.stackCount,
                                         name = itemName,
                                         ilvl = itemLevel or -1,
+                                        bagID = bag,
+                                        slotID = slot,
                                     })
                                     equipmentAdded[slotInfo.hyperlink] = true;
                                     self.disenchantMenu.listview.DataProvider:Insert(equipment[#equipment])
 
                                     if #equipment > 15 then
-                                        self.disenchantMenu:SetHeight(30 + (14 * 20))
+                                        self.disenchantMenu:SetHeight(60 + (14 * 20))
                                     else
-                                        self.disenchantMenu:SetHeight(30 + (#equipment * 20))
+                                        self.disenchantMenu:SetHeight(60 + (#equipment * 20))
                                     end
                                 else
                                     for _, gear in ipairs(equipment) do
@@ -510,7 +512,11 @@ function Enchantmate_SecureMacroButtonMixin:Init(elementData)
 
     -- enchanting 
     if elementData.type == "enchant" then
-        self.text:SetText(elementData.count > 0 and (elementData.name.." "..elementData.count) or "|cff666666"..elementData.name)
+        if elementData.count > 0 then
+            self.text:SetText(string.format("%s - [x%s]", elementData.name, elementData.count))
+        else
+            self.text:SetText("|cff666666"..elementData.name)
+        end
         if elementData.count > 0 then
 
 
@@ -576,8 +582,8 @@ function Enchantmate_SecureMacroButtonMixin:Init(elementData)
         self.text:SetText(elementData.link)
         local macro = string.format([[
 /cast %1$s
-/use %2$s
-]], "Disenchant", elementData.name)
+/use %2$s %3$s
+]], "Disenchant", elementData.bagID, elementData.slotID)
         self:SetAttribute("type", "macro")
         self:SetAttribute("macrotext", macro)
     end
