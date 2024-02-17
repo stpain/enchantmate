@@ -811,14 +811,16 @@ function Enchantmate.Api.GetItemFullNameFromLink(link)
 end
 
 --turn this into a direct DE menu update?
-function Enchantmate.Api.GetContainerDisenchantableItems()
+function Enchantmate.Api.GetContainerDisenchantableItems(expansion)
     local equipment, equipmentAdded = {}, {}
     for bag = 0, 4 do
         for slot = 1, C_Container.GetContainerNumSlots(bag) do
             local slotInfo = C_Container.GetContainerItemInfo(bag, slot)
-            if slotInfo and slotInfo.itemID then
+            if slotInfo and slotInfo.itemID and slotInfo.hyperlink then
                 local _, _, _, _, icon, itemClassID, itemSubClassID = GetItemInfoInstant(slotInfo.itemID)
                 local _, _, _, itemLevel = GetItemInfo(slotInfo.itemID)
+                local itemExpansion = select(15, GetItemInfo(slotInfo.hyperlink))
+                --print(itemExpansion)
                 local itemLoc = ItemLocation:CreateFromBagAndSlot(bag, slot)
                 if itemLoc then
                     local itemGUID = C_Item.GetItemGUID(itemLoc)
@@ -826,18 +828,35 @@ function Enchantmate.Api.GetContainerDisenchantableItems()
                         if (itemClassID == 2 or itemClassID == 4) and (slotInfo.quality > 1) then
                             local haveName, fullName = Enchantmate.Api.GetItemFullNameFromLink(slotInfo.hyperlink)
                             if haveName then
-                                table.insert(equipment, {
-                                    type = "disenchant",
-                                    icon = icon,
-                                    link = slotInfo.hyperlink,
-                                    count = slotInfo.stackCount,
-                                    name = fullName,
-                                    ilvl = itemLevel or -1,
-                                    guid = itemGUID,
-                                    bagID = bag,
-                                    slotID = slot,
-                                    quality = slotInfo.quality,
-                                })
+                                if expansion then
+                                    if (expansion == itemExpansion) then
+                                        table.insert(equipment, {
+                                            type = "disenchant",
+                                            icon = icon,
+                                            link = slotInfo.hyperlink,
+                                            count = slotInfo.stackCount,
+                                            name = fullName,
+                                            ilvl = itemLevel or -1,
+                                            guid = itemGUID,
+                                            bagID = bag,
+                                            slotID = slot,
+                                            quality = slotInfo.quality,
+                                        })
+                                    end
+                                else
+                                    table.insert(equipment, {
+                                        type = "disenchant",
+                                        icon = icon,
+                                        link = slotInfo.hyperlink,
+                                        count = slotInfo.stackCount,
+                                        name = fullName,
+                                        ilvl = itemLevel or -1,
+                                        guid = itemGUID,
+                                        bagID = bag,
+                                        slotID = slot,
+                                        quality = slotInfo.quality,
+                                    })
+                                end
                             end
                         end
                     end
@@ -1058,13 +1077,32 @@ function Enchantmate:ShowRetailDisenchantSchematicPage()
 
 end
 
-function Enchantmate:UpdateRetailDisenchantUI()
+
+local professionSkillIDs = {
+    [2494] = 0, --classic
+    [2493] = 1, --tbc
+    [2492] = 2, --wrath
+    [2491] = 3, --cata
+    [2489] = 4, --mop
+    [2488] = 5, --wod
+    [2487] = 6, --legion
+    [2486] = 7, --bfa
+    [2753] = 8, --shadowlands
+}
+function Enchantmate:UpdateRetailDisenchantUI(ignoreFilter)
 
     if not self.disenchantSchematicForm:IsVisible() then
         return
     end
 
-    local deItems = Enchantmate.Api.GetContainerDisenchantableItems()
+    local deItems;
+    if ignoreFilter then
+        deItems = Enchantmate.Api.GetContainerDisenchantableItems()
+    else
+        local professionInfo = Professions.GetProfessionInfo();
+        local profSkillID = professionSkillIDs[professionInfo.professionID]
+        deItems = Enchantmate.Api.GetContainerDisenchantableItems(profSkillID)
+    end
 
     table.sort(deItems, function(a, b)
         if a.quality == b.quality then
@@ -1073,7 +1111,6 @@ function Enchantmate:UpdateRetailDisenchantUI()
             return a.quality > b.quality
         end
     end)
-
 
     self.disenchantSchematicForm.gridview:Flush()
     self.disenchantSchematicForm.gridview:InsertTable(deItems)
@@ -1089,12 +1126,14 @@ end
 function Enchantmate:ShowRetailDisenchantUI()
 
     self.retailDisenchantRecipeButton:Show()
+    self.retailDisenchantShowAllItemsButton:Show()
     
 end
 
 function Enchantmate:HideRetailDisenchantUI()
 
     self.retailDisenchantRecipeButton:Hide()
+    self.retailDisenchantShowAllItemsButton:Hide()
     self.disenchantSchematicForm:Hide()
 
     ProfessionsFrame.CraftingPage.SchematicForm:Show()
@@ -1127,7 +1166,7 @@ function Enchantmate:SetupForRetail()
 
     self.retailDisenchantRecipeButton = CreateFrame("Button", nil, ProfessionsFrame.CraftingPage, "UIPanelButtonTemplate")
     self.retailDisenchantRecipeButton:SetText("Disenchanting")
-    self.retailDisenchantRecipeButton:SetSize(274, 24)
+    self.retailDisenchantRecipeButton:SetSize(160, 24)
     self.retailDisenchantRecipeButton:SetPoint("BOTTOMLEFT", ProfessionsFrame.CraftingPage.RecipeList, "BOTTOMRIGHT", 1, 1)
     self.retailDisenchantRecipeButton:SetScript("OnClick", function()
         if self.disenchantSchematicForm:IsVisible() then
@@ -1138,13 +1177,32 @@ function Enchantmate:SetupForRetail()
 
     end)
     self.retailDisenchantRecipeButton:Hide()
-    
+
+    self.retailDisenchantShowAllItemsButton = CreateFrame("Button", nil, ProfessionsFrame.CraftingPage, "UIPanelButtonTemplate")
+    self.retailDisenchantShowAllItemsButton:SetText("Show All")
+    self.retailDisenchantShowAllItemsButton:SetSize(160, 24)
+    self.retailDisenchantShowAllItemsButton:SetPoint("BOTTOMLEFT", self.retailDisenchantRecipeButton, "BOTTOMRIGHT", 1, 0)
+    self.retailDisenchantShowAllItemsButton:SetScript("OnClick", function()
+        self:UpdateRetailDisenchantUI(true)
+    end)
+    self.retailDisenchantShowAllItemsButton:Hide()
+
+
+
+
     hooksecurefunc(ProfessionsFrame, "SetProfessionInfo", function(a, profInfo)
         if profInfo.parentProfessionID == 333 then
+            self:UpdateRetailDisenchantUI()
             self:ShowRetailDisenchantUI()
         else
             self:HideRetailDisenchantUI()
         end
+
+        --DevTools_Dump(profInfo)
+        --local cats = C_TradeSkillUI.GetCategoryInfo(profInfo.categoryID)
+        --DevTools_Dump(cats)
+        --local filters = Professions.GetCurrentFilterSet()
+        --DevTools_Dump(filters)
     end)
 end
 
