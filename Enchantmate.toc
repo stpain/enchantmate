@@ -1,7 +1,7 @@
-## Interface: 30400
+## Interface: 11507
 ## Title: Enchantmate
 ## Notes: Enchanting helper
-## Version: 1.0
+## Version: 2.0
 ## Author: stpain
 ## SavedVariables: ENCHANTMATE
 

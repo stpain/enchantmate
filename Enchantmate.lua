@@ -39,6 +39,74 @@ local layouts = {
 	},
 }
 
+local characterInvSlots = {
+    { 
+        invSlot = "CharacterBackSlot",
+        enchants_Classic = "Enchant Cloak",
+        enchants_Retail = "Cloak Enchantments",
+    },
+    { 
+        invSlot = "CharacterChestSlot", 
+        enchants_Classic = "Enchant Chest",
+        enchants_Retail = "Chest Enchantments",
+        
+    },
+    { 
+        invSlot = "CharacterWristSlot", 
+        enchants_Classic = "Enchant Bracer",
+        enchants_Retail = "Bracer Enchantments",
+    },
+    { 
+        invSlot = "CharacterHandsSlot", 
+        enchants_Classic = "Enchant Gloves",
+        enchants_Retail = "Glove Enchantments",
+    },
+    { 
+        invSlot = "CharacterFeetSlot", 
+        enchants_Classic = "Enchant Boots",
+        enchants_Retail = "Boot Enchantments",
+    },
+    { 
+        invSlot = "CharacterFinger0Slot", 
+        enchants_Classic = "Enchant Ring",
+        enchants_Retail = "Ring Enchantments",
+    },
+    { 
+        invSlot = "CharacterFinger1Slot", 
+        enchants_Classic = "Enchant Ring",
+        enchants_Retail = "Ring Enchantments",
+    },
+    { 
+        invSlot = "CharacterMainHandSlot", 
+        enchants_Classic = { 
+            "Enchant Weapon", 
+            "Enchant 2H Weapon" 
+        },
+        enchants_Retail = "Weapon Enchantments",
+    },
+    { 
+        invSlot = "CharacterSecondaryHandSlot", 
+        enchants_Classic = { 
+            "Enchant Weapon", 
+            "Enchant Shield" 
+        },
+        enchants_Retail = {
+            "Weapon Enchantments",
+            "Shield Enchantments",
+        }
+    },
+}
+
+
+
+
+--[[
+
+    leave this here for now as it might be needed for classic/era etc
+
+    update this 
+
+]]
 local app = {
 
     enchantCastedID = false,
@@ -490,6 +558,14 @@ local app = {
 
 
 Enchantmate_SecureMacroButtonMixin = {}
+
+--this allows the gridview to use the current templates
+function Enchantmate_SecureMacroButtonMixin:SetDataBinding(binding)
+    self:Init(binding)
+end
+function Enchantmate_SecureMacroButtonMixin:ResetDataBinding()
+
+end
 function Enchantmate_SecureMacroButtonMixin:OnEnter()
     if self.item then
         if self.item.type == "enchant" then
@@ -507,8 +583,16 @@ end
 function Enchantmate_SecureMacroButtonMixin:OnLeave()
     GameTooltip_SetDefaultAnchor(GameTooltip, UIParent)
 end
+
+local borderColours = {
+    [2] = "bags-glow-green",
+    [3] = "bags-glow-blue",
+    [4] = "bags-glow-purple",
+    [5] = "bags-glow-orange",
+}
 function Enchantmate_SecureMacroButtonMixin:Init(elementData)
     self.item = elementData;
+    self:RegisterForClicks("AnyUp", "AnyDown")
 
     -- enchanting 
     if elementData.type == "enchant" then
@@ -579,13 +663,22 @@ function Enchantmate_SecureMacroButtonMixin:Init(elementData)
 
     -- disenchanting
     elseif elementData.type == "disenchant" then
-        self.text:SetText(elementData.link)
+
+        if self.text then
+            self.text:SetText(elementData.link)
+        end
+        if self.icon then
+            self.icon:SetTexture(elementData.icon)
+        end
+        if self.border then
+            self.border:SetAtlas(borderColours[elementData.quality])
+        end
         local macro = string.format([[
 /cast %1$s
-/use %2$s %3$s
+/use %2$d %3$d
 ]], "Disenchant", elementData.bagID, elementData.slotID)
-        self:SetAttribute("type", "macro")
-        self:SetAttribute("macrotext", macro)
+        self:SetAttribute("type1", "macro")
+        self:SetAttribute("macrotext1", macro)
     end
 end
 
@@ -601,26 +694,23 @@ function Enchantmate_InvSlotButtonMixin:OnLeave()
     GameTooltip_SetDefaultAnchor(GameTooltip, UIParent)
 end
 function Enchantmate_InvSlotButtonMixin:OnClick()
-    local button = self;
     local enchants;
-
-    
-
     if WOW_PROJECT_ID == WOW_PROJECT_CLASSIC then
-        enchants = app.getAvailableEnchantsForSlot_Era(button.slot)
+        enchants = app.getAvailableEnchantsForSlot_Era(self.slot)
 
     elseif WOW_PROJECT_ID ==  WOW_PROJECT_WRATH_CLASSIC then
-        enchants = app.getAvailableEnchantsForSlot_Wrath(button.slot)
+        enchants = app.getAvailableEnchantsForSlot_Wrath(self.slot)
 
     else
-        enchants = app.getAvailableEnchantsForSlot_Retail(button.slot)
+        enchants = app.getAvailableEnchantsForSlot_Retail(self.slot)
     end
-    app.enchantMenu.listview.DataProvider:Flush()
     if enchants then
-        app.enchantMenu.listview.DataProvider:InsertTable(enchants)
+        app.enchantMenu.listview.ScrollView:SetDataProvider(CreateDataProvider(enchants))
         app.enchantMenu:Show()
         app.enchantMenu:ClearAllPoints()
-        app.enchantMenu:SetPoint("LEFT", button, "RIGHT", -20, 0)
+        app.enchantMenu:SetPoint("LEFT", self, "RIGHT", -20, 0)
+    else
+        app.enchantMenu.listview.ScrollView:SetDataProvider(CreateDataProvider({}))
     end
 end
 --#endregion
@@ -670,20 +760,565 @@ function Enchantmate_DisenchantMenuMixin:OnEvent(event, ...)
 end
 
 
---- this could have been added to a menu frame
-local f = CreateFrame("FRAME")
-f:RegisterEvent("ADDON_LOADED")
-f:RegisterEvent("PLAYER_ENTERING_WORLD")
-f:SetScript("OnEvent", function(self, event, ...)
-    if (event == "ADDON_LOADED") and (... == "Enchantmate") then
-        self:UnregisterEvent("ADDON_LOADED")
-        if not ENCHANTMATE then
-            ENCHANTMATE = {
-                blacklistItems = {},
-            }
+
+
+local Enchantmate = {
+    Api = {},
+    enchantMenu = false,
+    disenchantMenu = false,
+}
+
+function Enchantmate.Api.PlayerHasEnchanting()
+
+    local locales = {
+        enUS = "Enchanting",
+        deDE = "Verzauberkunst",
+        frFR = "Enchantement",
+        esMX = "Encantamiento",
+        esES = "Encantamiento",
+        ptBR = "Encantamento",
+        ruRU = "Наложение чар",
+        zhCN = "附魔",
+        zhTW = "附魔",
+        koKR = "마법부여",
+    }
+
+    ENCHANTING = locales[GetLocale()]
+
+    if C_TradeSkillUI then
+        local prof1, prof2, archaeology, fishing, cooking = GetProfessions()
+        if (prof1 and (GetProfessionInfo(prof1) == ENCHANTING)) or (prof2 and (GetProfessionInfo(prof2) == ENCHANTING)) then
+            return true;
+        end
+    else
+        for i = 1, GetNumSkillLines() do
+            local skill, _, _, level, _, _, _, _, _, _, _, _, _ = GetSkillLineInfo(i)
+            if skill == ENCHANTING then
+                return true;
+            end
         end
     end
-    if event == "PLAYER_ENTERING_WORLD" then
-        app:init()
+    return false;
+end
+
+function Enchantmate.Api.GetItemFullNameFromLink(link)
+    if link:find("|Hitem") then
+        local s = link:find("|h%[")
+        local e = link:find("%]|h")
+        return true, link:sub(s+3,e-1)
     end
+    return false, "";
+end
+
+--turn this into a direct DE menu update?
+function Enchantmate.Api.GetContainerDisenchantableItems(expansion)
+    local equipment, equipmentAdded = {}, {}
+    for bag = 0, 4 do
+        for slot = 1, C_Container.GetContainerNumSlots(bag) do
+            local slotInfo = C_Container.GetContainerItemInfo(bag, slot)
+            if slotInfo and slotInfo.itemID and slotInfo.hyperlink then
+                local _, _, _, _, icon, itemClassID, itemSubClassID = GetItemInfoInstant(slotInfo.itemID)
+                local _, _, _, itemLevel = GetItemInfo(slotInfo.itemID)
+                local itemExpansion = select(15, GetItemInfo(slotInfo.hyperlink))
+                --print(itemExpansion)
+                local itemLoc = ItemLocation:CreateFromBagAndSlot(bag, slot)
+                if itemLoc then
+                    local itemGUID = C_Item.GetItemGUID(itemLoc)
+                    if itemGUID then
+                        if (itemClassID == 2 or itemClassID == 4) and (slotInfo.quality > 1) then
+                            local haveName, fullName = Enchantmate.Api.GetItemFullNameFromLink(slotInfo.hyperlink)
+                            if haveName then
+                                if expansion then
+                                    if (expansion == itemExpansion) then
+                                        table.insert(equipment, {
+                                            type = "disenchant",
+                                            icon = icon,
+                                            link = slotInfo.hyperlink,
+                                            count = slotInfo.stackCount,
+                                            name = fullName,
+                                            ilvl = itemLevel or -1,
+                                            guid = itemGUID,
+                                            bagID = bag,
+                                            slotID = slot,
+                                            quality = slotInfo.quality,
+                                        })
+                                    end
+                                else
+                                    table.insert(equipment, {
+                                        type = "disenchant",
+                                        icon = icon,
+                                        link = slotInfo.hyperlink,
+                                        count = slotInfo.stackCount,
+                                        name = fullName,
+                                        ilvl = itemLevel or -1,
+                                        guid = itemGUID,
+                                        bagID = bag,
+                                        slotID = slot,
+                                        quality = slotInfo.quality,
+                                    })
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return equipment;
+end
+
+function Enchantmate.Api.GetEnchantsForSlot_Era(slot)
+    local hiddenScan = false;
+    if not CraftFrame:IsVisible() then
+        CraftFrame:SetAlpha(0)
+        CastSpellByName(ENCHANTING)
+        hiddenScan = true;
+    end
+    local enchants = {}
+    for i = 1, GetNumCrafts() do
+        local craftName, craftSubSpellName, craftType, numAvailable, isExpanded = GetCraftInfo(i)
+        if (craftType == "optimal" or craftType == "medium" or craftType == "easy" or craftType == "trivial") then -- this is to make sure we only get enchants the player knows
+            local link = GetCraftItemLink(i)
+            local numReagents = GetCraftNumReagents(i);
+            local reagents = {}
+            if numReagents > 0 then
+                for j = 1, numReagents do
+                    local _, _, reagentCount = GetCraftReagentInfo(i, j)
+                    local reagentLink = GetCraftReagentItemLink(i, j)
+                    if reagentLink and reagentCount then
+                        table.insert(reagents, {
+                            link = reagentLink,
+                            count = reagentCount,
+                        })
+                    end
+                end
+            end
+            local enchantFound = false;
+            if type(slot.enchants_Classic) == "table" then
+                for _, enchant in ipairs(slot.enchants_Classic) do
+                    if craftName:find(enchant) then
+                        enchantFound = true
+                    end
+                end
+            else
+                if craftName:find(slot.enchants_Classic) then
+                    enchantFound = true;
+                end
+            end
+            if enchantFound then
+                table.insert(enchants, {
+                    type = "enchant",
+                    name = craftName,
+                    index = i,
+                    count = numAvailable,
+                    slot = slot.invSlot,
+                    --itemID = itemID,
+                    difficulty = craftType,
+                    reagents = reagents,
+                    link = link,
+                })
+            end
+        end
+    end
+    if hiddenScan then
+        C_Timer.After(0.1, function()
+            CraftFrameCloseButton:Click()
+            CraftFrame:SetAlpha(1)
+        end)
+    end
+    table.sort(enchants, function(a,b)
+        return a.count > b.count
+    end)
+    return enchants;
+end
+
+function Enchantmate.Api.GetEnchantsForSlot_Wrath(slot)
+    local hiddenScan = false;
+    if not TradeSkillFrame:IsVisible() then
+        TradeSkillFrame:SetAlpha(0)
+        CastSpellByName(ENCHANTING)
+        hiddenScan = true;
+    end
+    local enchants = {}
+    for i = 1, GetNumTradeSkills() do
+        local craftName, craftType, numAvailable, isExpanded, trainingPointCost, requiredLevel = GetTradeSkillInfo(i)
+        if (craftType == "optimal" or craftType == "medium" or craftType == "easy" or craftType == "trivial") then -- this is to make sure we only get enchants the player knows
+            local link = GetTradeSkillRecipeLink(i)
+            local numReagents = GetTradeSkillNumReagents(i);
+            local reagents = {}
+            if numReagents > 0 then
+                for j = 1, numReagents do
+                    local _, _, reagentCount = GetTradeSkillReagentInfo(i, j)
+                    local reagentLink = GetTradeSkillReagentItemLink(i, j)
+                    if reagentLink and reagentCount then
+                        table.insert(reagents, {
+                            link = reagentLink,
+                            count = reagentCount,
+                        })
+                    end
+                end
+            end
+            local enchantFound = false;
+            if type(slot.enchants_Classic) == "table" then
+                for _, enchant in ipairs(slot.enchants_Classic) do
+                    if craftName:find(enchant) then
+                        enchantFound = true
+                    end
+                end
+            else
+                if craftName:find(slot.enchants_Classic) then
+                    enchantFound = true;
+                end
+            end
+            if enchantFound then
+                table.insert(enchants, {
+                    type = "enchant",
+                    name = craftName,
+                    index = i,
+                    count = numAvailable,
+                    slot = slot.invSlot,
+                    --itemID = itemID,
+                    difficulty = craftType,
+                    reagents = reagents,
+                    link = link,
+                })
+            end
+        end
+    end
+    if hiddenScan then
+        C_Timer.After(0.1, function()
+            TradeSkillFrameCloseButton:Click()
+            TradeSkillFrame:SetAlpha(1)
+        end)
+    end
+    table.sort(enchants, function(a,b)
+        return a.count > b.count
+    end)
+    return enchants;
+end
+
+function Enchantmate.Api.GetEnchantsForSlot_Retail(slot)
+    local hiddenScan = false;
+    if not TradeSkillFrame:IsVisible() then
+        TradeSkillFrame:SetAlpha(0)
+        CastSpellByName(ENCHANTING)
+        hiddenScan = true;
+    end
+    local enchants = {}
+    for _, id in pairs(C_TradeSkillUI.GetAllRecipeIDs()) do
+        local recipeInfo = C_TradeSkillUI.GetRecipeInfo(id)
+        local reagents = {}
+        if recipeInfo.learned then
+            local enchantFound = false;
+            local category = C_TradeSkillUI.GetCategoryInfo(recipeInfo.categoryID).name
+            if category then
+                if type(slot.enchants_Retail) == "table" then
+                    for _, enchant in ipairs(slot.enchants_Retail) do
+                        if category:find(enchant) then
+                            enchantFound = true
+                        end
+                    end
+                else
+                    if category:find(slot.enchants_Retail) then
+                        enchantFound = true;
+                    end
+                end
+                if enchantFound then
+                    for i = 1, C_TradeSkillUI.GetRecipeNumReagents(id) do
+                        local name, icon, reagentCount, playerReagentCount = C_TradeSkillUI.GetRecipeReagentInfo(id, i)
+                        local itemLink = C_TradeSkillUI.GetRecipeReagentItemLink(id, i)
+                        if reagentCount and itemLink then
+                            table.insert(reagents, {
+                                link = itemLink,
+                                count = reagentCount
+                            })
+                        end
+                    end
+                    table.insert(enchants, {
+                        type = "enchant",
+                        name = recipeInfo.name,
+                        index = i,
+                        count = recipeInfo.numAvailable,
+                        slot = slot.invSlot,
+                        itemID = recipeInfo.recipeID,
+                        difficulty = recipeInfo.difficulty,
+                        reagents = reagents,
+                    })
+                end
+            end
+        end
+    end
+    if hiddenScan then
+        C_Timer.After(0.1, function()
+            TradeSkillFrameCloseButton:Click()
+            TradeSkillFrame:SetAlpha(1)
+        end)
+    end
+    table.sort(enchants, function(a,b)
+        return a.count > b.count
+    end)
+    return enchants;
+end
+
+
+
+
+
+--[[
+    RETAIL
+]]
+local professionSkillIDs = {
+    [2494] = 0, --classic
+    [2493] = 1, --tbc
+    [2492] = 2, --wrath
+    [2491] = 3, --cata
+    [2489] = 4, --mop
+    [2488] = 5, --wod
+    [2487] = 6, --legion
+    [2486] = 7, --bfa
+    [2753] = 8, --shadowlands
+}
+
+local parentFrame;
+
+function Enchantmate:UpdateRetailDisenchantUI(ignoreFilter)
+
+    if DragonflightUIProfessionFrame then
+        ignoreFilter = true
+    end
+
+    if not self.disenchantSchematicForm:IsVisible() then
+        return
+    end
+
+    local deItems;
+    if ignoreFilter then
+        deItems = Enchantmate.Api.GetContainerDisenchantableItems()
+    else
+        local professionInfo = Professions.GetProfessionInfo();
+        local profSkillID = professionSkillIDs[professionInfo.professionID]
+        deItems = Enchantmate.Api.GetContainerDisenchantableItems(profSkillID)
+    end
+
+    table.sort(deItems, function(a, b)
+        if a.quality == b.quality then
+            return a.name < b.name
+        else
+            return a.quality > b.quality
+        end
+    end)
+
+    self.disenchantSchematicForm.gridview:Flush()
+    self.disenchantSchematicForm.gridview:InsertTable(deItems)
+end
+
+function Enchantmate:HideRetailDisenchantSchematicPage()
+    
+    parentFrame.SchematicForm:Show()
+
+    self.disenchantSchematicForm:Hide()
+end
+
+function Enchantmate:ShowRetailDisenchantSchematicPage()
+    
+    parentFrame.SchematicForm:Hide()
+
+    self.disenchantSchematicForm:Show()
+
+    self:UpdateRetailDisenchantUI()
+
+end
+
+function Enchantmate:ShowRetailDisenchantUI()
+
+    self.retailDisenchantRecipeButton:Show()
+    self.retailDisenchantShowAllItemsButton:Show()
+    
+end
+
+function Enchantmate:HideRetailDisenchantUI()
+
+    self.retailDisenchantRecipeButton:Hide()
+    self.retailDisenchantShowAllItemsButton:Hide()
+    self.disenchantSchematicForm:Hide()
+
+    parentFrame.SchematicForm:Show()
+end
+
+function Enchantmate:SetupForRetail()
+
+    if not ProfessionsFrame then
+        C_AddOns.LoadAddOn("Blizzard_Professions")
+    end
+
+    Enchantmate_CraftMenu:Hide()
+    Enchantmate_DisenchantMenu:Hide()
+
+    if ProfessionsFrame and ProfessionsFrame.CraftingPage then
+        parentFrame = parentFrame
+
+        hooksecurefunc(ProfessionsFrame, "SetProfessionInfo", function(a, profInfo)
+            if profInfo.parentProfessionID == 333 then
+                self:UpdateRetailDisenchantUI()
+                self:ShowRetailDisenchantUI()
+            else
+                self:HideRetailDisenchantUI()
+            end
+
+            --DevTools_Dump(profInfo)
+            --local cats = C_TradeSkillUI.GetCategoryInfo(profInfo.categoryID)
+            --DevTools_Dump(cats)
+            --local filters = Professions.GetCurrentFilterSet()
+            --DevTools_Dump(filters)
+        end)
+
+    elseif DragonflightUIProfessionFrame then
+        parentFrame = DragonflightUIProfessionFrame
+
+        CraftFrame:HookScript("OnShow", function()
+            C_Timer.After(1, function()
+                --DevTools_Dump(parentFrame.NineSlice.Text:GetText())
+                if parentFrame.NineSlice.Text:GetText() == ENCHANTING then
+                    self:UpdateRetailDisenchantUI()
+                    self:ShowRetailDisenchantUI()
+                else
+                    self:HideRetailDisenchantUI()
+                end
+            end)
+
+        end)
+        
+        CraftFrame:HookScript("OnHide", function()
+            self:HideRetailDisenchantUI()
+        end)
+
+
+    end
+
+    self.disenchantSchematicForm = CreateFrame("Frame", nil, parentFrame, "RetailDisenchantSchematicFrame")
+    self.disenchantSchematicForm:SetPoint("TOPLEFT", parentFrame.RecipeList, "TOPRIGHT", 2, 0)
+    self.disenchantSchematicForm:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -5, 33)
+    self.disenchantSchematicForm:Hide()
+    self.disenchantSchematicForm.deSpellIcon.Icon:SetAtlas("Mobile-Enchanting")
+    self.disenchantSchematicForm.deSpellIcon.IconBorder:Show()
+    self.disenchantSchematicForm:RegisterEvent("BAG_UPDATE_DELAYED")
+    self.disenchantSchematicForm:SetScript("OnEvent", function(_, event, ...)
+        if event == "BAG_UPDATE_DELAYED" then
+            self:UpdateRetailDisenchantUI()
+        end
+    end)
+
+    self.disenchantSchematicForm.gridview:InitFramePool("Button", "EnchantmateRetailDE_SecureMacroButton")
+    self.disenchantSchematicForm.gridview:SetFixedColumnCount(14)
+
+    self.retailDisenchantRecipeButton = CreateFrame("Button", nil, parentFrame, "UIPanelButtonTemplate")
+    self.retailDisenchantRecipeButton:SetText("Disenchanting")
+    self.retailDisenchantRecipeButton:SetSize(160, 24)
+    self.retailDisenchantRecipeButton:SetPoint("BOTTOMLEFT", parentFrame.RecipeList, "BOTTOMRIGHT", 1, 1)
+    self.retailDisenchantRecipeButton:SetScript("OnClick", function()
+        if self.disenchantSchematicForm:IsVisible() then
+            self:HideRetailDisenchantSchematicPage()
+        else
+            self:ShowRetailDisenchantSchematicPage()
+        end
+
+    end)
+    self.retailDisenchantRecipeButton:Hide()
+
+    self.retailDisenchantShowAllItemsButton = CreateFrame("Button", nil, parentFrame, "UIPanelButtonTemplate")
+    self.retailDisenchantShowAllItemsButton:SetText("Show All")
+    self.retailDisenchantShowAllItemsButton:SetSize(160, 24)
+    self.retailDisenchantShowAllItemsButton:SetPoint("BOTTOMLEFT", self.retailDisenchantRecipeButton, "BOTTOMRIGHT", 1, 0)
+    self.retailDisenchantShowAllItemsButton:SetScript("OnClick", function()
+        self:UpdateRetailDisenchantUI(true)
+    end)
+    self.retailDisenchantShowAllItemsButton:Hide()
+
+
+end
+
+
+
+
+
+
+
+
+function Enchantmate:Init()
+    
+    local hasEnchanting = Enchantmate.Api.PlayerHasEnchanting()
+    if hasEnchanting == false then
+        --return;
+    else
+        print("no enchanting")
+    end
+
+    print("init enchantmate")
+
+    if WOW_PROJECT_ID == WOW_PROJECT_MAINLINE then
+        self:SetupForRetail()
+    else
+        
+        app.enchantMenu = Enchantmate_CraftMenu;
+        app.disenchantMenu = Enchantmate_DisenchantMenu
+        app.disenchantMenu:SetSize(350, 600)
+
+        NineSliceUtil.ApplyLayout(app.enchantMenu, layouts.DarkTooltip)
+        NineSliceUtil.ApplyLayout(app.disenchantMenu, layouts.DarkTooltip)
+    
+        for _, slot in ipairs(characterInvSlots) do
+            local b = CreateFrame("BUTTON", "CraftCreateButton_"..slot.invSlot, PaperDollItemsFrame, "Enchantmate_InvSlotButton")
+            b:SetPoint("BOTTOMRIGHT", slot.invSlot, "BOTTOMRIGHT", 5, -5)
+            b.slot = slot;
+        end
+    
+        if WOW_PROJECT_ID == WOW_PROJECT_CLASSIC then
+            if not CraftFrame then
+                C_AddOns.LoadAddOn("Blizzard_CraftUI")
+            end
+
+            if DragonflightUIProfessionFrame then
+                self:SetupForRetail()
+                return
+            end
+
+
+            CraftFrame:HookScript("OnShow", function()
+                if CraftFrameTitleText:GetText() == ENCHANTING then
+                    app.disenchantMenu:Show()
+                    app:updateDisenchantMenu()
+                else
+                    app.disenchantMenu:Hide()
+                end
+            end)
+            app.disenchantMenu:ClearAllPoints()
+
+    
+        else
+            if not TradeSkillFrame then
+                LoadAddOn("Blizzard_TradeSkillUI")
+            end
+            TradeSkillFrame:HookScript("OnShow", function()
+                if TradeSkillFrameTitleText:GetText() == "Enchanting" then
+                    app.disenchantMenu:Show()
+                    app:updateDisenchantMenu()
+                else
+                    app.disenchantMenu:Hide()
+                end
+            end)
+            app.disenchantMenu:ClearAllPoints()
+            app.disenchantMenu:SetParent(TradeSkillFrame)
+            app.disenchantMenu:SetPoint("TOPLEFT", TradeSkillFrame, "TOPRIGHT", 10, -10)
+        end
+    end
+end
+
+
+
+--- this could have been added to a menu frame
+local EventHandler = CreateFrame("FRAME")
+EventHandler:RegisterEvent("PLAYER_ENTERING_WORLD")
+EventHandler:SetScript("OnEvent", function(self, event, ...)
+    self:UnregisterEvent("PLAYER_ENTERING_WORLD")
+    Enchantmate:Init()
 end)

@@ -1,5 +1,57 @@
 <UI>
 
+<!-- mixin="CircularGiantItemButtonMixin" -->
+	<Button name="CircularGiantItemButtonTemplate" registerForClicks="LeftButtonUp, RightButtonUp" virtual="true"> 
+		<Size x="54" y="54"/>
+		<Layers>
+			<Layer level="BORDER">
+				<Texture parentKey="Icon">
+					<Size x="46" y="46"/>
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+					<TexCoords left="0.078125" right="0.921875" top="0.078125" bottom="0.921875"/>
+				</Texture>
+				<MaskTexture parentKey="CircleMask" file="Interface\CharacterFrame\TempPortraitAlphaMask" hWrapMode="CLAMPTOBLACKADDITIVE" vWrapMode="CLAMPTOBLACKADDITIVE">
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeKey="$parent.Icon" x="2" y="-2"/>
+						<Anchor point="BOTTOMRIGHT" relativeKey="$parent.Icon" x="-2" y="2"/>
+					</Anchors>
+					<MaskedTextures>
+						<MaskedTexture childKey="Icon"/> <!-- NOTE: cannot use CircularItemButtonTemplate which is intended for ItemButton intrinsic, Icon/icon case mismatch -->
+					</MaskedTextures>
+				</MaskTexture>
+			</Layer>
+			<Layer level="OVERLAY">
+				<Texture parentKey="IconBorder" atlas="auctionhouse-itemicon-border-white" hidden="true">
+					<Size x="68" y="68"/>
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+			<Layer level="OVERLAY" textureSubLevel="1">
+				<Texture parentKey="IconOverlay" hidden="true"/>
+			</Layer>
+			<Layer level="OVERLAY" textureSubLevel="2">
+				<Texture parentKey="IconOverlay2" hidden="true"/>
+			</Layer>
+			<Layer level="OVERLAY">
+				<FontString parentKey="Count" inherits="NumberFontNormal" justifyH="RIGHT" hidden="true">
+					<Anchors>
+						<Anchor point="BOTTOMRIGHT" x="-5" y="2"/>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<HighlightTexture atlas="auctionhouse-itemicon-border-white" alpha="0.2" alphaMode="ADD">
+			<Size x="66" y="66"/>
+			<Anchors>
+				<Anchor point="CENTER"/>
+			</Anchors>
+		</HighlightTexture>
+	</Button>
+
     <!-- this is the button for the popout menu that will perform the enchant -->
     <Button name="Enchantmate_SecureMacroButton" mixin="Enchantmate_SecureMacroButtonMixin" virtual="true" inherits="SecureActionButtonTemplate">
         <Size y="20"/>
@@ -13,12 +65,41 @@
                 </Texture>
             </Layer>
             <Layer level="OVERLAY">
-                <FontString parentKey="text" inherits="GameFontNormal">
+                <FontString parentKey="text" inherits="GameFontNormal" justifyH="LEFT">
                     <Anchors>
                         <Anchor point="TOPLEFT" x="0" y="0"/>
                         <Anchor point="BOTTOMRIGHT" x="0" y="0"/>
                     </Anchors>
                 </FontString>
+            </Layer>
+        </Layers>
+        <Scripts>
+            <OnEnter method="OnEnter"/>
+            <OnLeave method="OnLeave"/>
+        </Scripts>
+    </Button>
+
+    <!-- retail de button -->
+    <Button name="EnchantmateRetailDE_SecureMacroButton" mixin="Enchantmate_SecureMacroButtonMixin" virtual="true" inherits="SecureActionButtonTemplate">
+        <Size x="44" y="44"/>
+        <Layers>
+            <Layer level="ARTWORK">
+                <Texture parentKey="icon">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" x="2" y="-2"/>
+                        <Anchor point="BOTTOMRIGHT" x="-2" y="2"/>
+                    </Anchors>
+                </Texture>
+            </Layer>
+            <Layer level="OVERLAY">
+                <Texture parentKey="border" alpha="0.8">
+                    <Anchors>
+                        <!-- <Anchor point="TOPLEFT" x="1" y="-1"/>
+                        <Anchor point="BOTTOMRIGHT" x="-1" y="1"/> -->
+                        <Anchor point="TOPLEFT" x="2" y="-2"/>
+                        <Anchor point="BOTTOMRIGHT" x="-2" y="2"/>
+                    </Anchors>
+                </Texture>
             </Layer>
         </Layers>
         <Scripts>
@@ -87,32 +168,6 @@
                     </Anchors>
                 </Texture>
             </Layer>
-            <!-- <Layer level="ARTWORK">
-                <Texture parentKey="topLeft" atlas="UI-CharacterCreate-Metal-Small-Finery" useAtlasSize="true">
-                    <Anchors>
-                        <Anchor point="TOPLEFT" x="-5" y="5"/>
-                    </Anchors>
-                    <TexCoords left="0.0" right="1.0" top="0.0" bottom="1.0"/>
-                </Texture>
-                <Texture parentKey="topRight" atlas="UI-CharacterCreate-Metal-Small-Finery" useAtlasSize="true">
-                    <Anchors>
-                        <Anchor point="TOPRIGHT" x="5" y="5"/>
-                    </Anchors>
-                    <TexCoords left="1.0" right="0.0" top="0.0" bottom="1.0"/>
-                </Texture>
-                <Texture parentKey="bottomLeft" atlas="UI-CharacterCreate-Metal-Small-Finery" useAtlasSize="true">
-                    <Anchors>
-                        <Anchor point="BOTTOMLEFT" x="-5" y="-5"/>
-                    </Anchors>
-                    <TexCoords left="0.0" right="1.0" top="1.0" bottom="0.0"/>
-                </Texture>
-                <Texture parentKey="bottomRight" atlas="UI-CharacterCreate-Metal-Small-Finery" useAtlasSize="true">
-                    <Anchors>
-                        <Anchor point="BOTTOMRIGHT" x="5" y="-5"/>
-                    </Anchors>
-                    <TexCoords left="1.0" right="0.0" top="1.0" bottom="0.0"/>
-                </Texture>
-            </Layer> -->
             <Layer level="OVERLAY">
                 <FontString parentKey="title" inherits="GameFontNormalLarge" text="Enchantments">
                     <Color r="1" g="1" b="1"/>
@@ -135,6 +190,38 @@
         </Scripts>
     </Frame>
 
+    <Frame name="RetailDisenchantSchematicFrame" inherits="InsetFrameTemplate" virtual="true">
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture parentKey="background" file="Interface/AddOns/Enchantmate/professionspecializationpreviewartenchanting.blp">
+                    <Texcoords left="0" right="0.25" top="0" bottom="0.5"/>
+                </Texture>
+            </Layer>
+        </Layers>
+        <Frames>
+            <Frame parentKey="deSpellIcon" inherits="CircularGiantItemButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="27" y="-27"/>
+                </Anchors>
+            </Frame>
+            <ScrollFrame parentKey="gridview" inherits="TBDGridviewTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="30" y="-130"/>
+                    <Anchor point="BOTTOMRIGHT" x="-30" y="10"/>
+                </Anchors>
+            </ScrollFrame>
+        </Frames>
+        <Layers>
+            <Layer level="OVERLAY">
+				<FontString parentKey="OutputText" inherits="GameFontHighlightSmall2" justifyV="TOP" justifyH="LEFT" text="Container items that can be disenchanted are listed below, click an item to disenchant it.">
+					<Size x="373" y="0"/>
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeKey="$parent.deSpellIcon" relativePoint="TOPRIGHT" x="12" y="-1"/>
+					</Anchors>
+				</FontString>
+            </Layer>
+        </Layers>
+    </Frame>
 
     <Frame name="Enchantmate_DisenchantMenu" mixin="Enchantmate_DisenchantMenuMixin" enableMouse="true">
         <Size x="200" y="50"/>
@@ -151,32 +238,6 @@
                     </Anchors>
                 </Texture>
             </Layer>
-            <!-- <Layer level="ARTWORK">
-                <Texture parentKey="topLeft" atlas="UI-CharacterCreate-Metal-Small-Finery" useAtlasSize="true">
-                    <Anchors>
-                        <Anchor point="TOPLEFT" x="-5" y="5"/>
-                    </Anchors>
-                    <TexCoords left="0.0" right="1.0" top="0.0" bottom="1.0"/>
-                </Texture>
-                <Texture parentKey="topRight" atlas="UI-CharacterCreate-Metal-Small-Finery" useAtlasSize="true">
-                    <Anchors>
-                        <Anchor point="TOPRIGHT" x="5" y="5"/>
-                    </Anchors>
-                    <TexCoords left="1.0" right="0.0" top="0.0" bottom="1.0"/>
-                </Texture>
-                <Texture parentKey="bottomLeft" atlas="UI-CharacterCreate-Metal-Small-Finery" useAtlasSize="true">
-                    <Anchors>
-                        <Anchor point="BOTTOMLEFT" x="-5" y="-5"/>
-                    </Anchors>
-                    <TexCoords left="0.0" right="1.0" top="1.0" bottom="0.0"/>
-                </Texture>
-                <Texture parentKey="bottomRight" atlas="UI-CharacterCreate-Metal-Small-Finery" useAtlasSize="true">
-                    <Anchors>
-                        <Anchor point="BOTTOMRIGHT" x="5" y="-5"/>
-                    </Anchors>
-                    <TexCoords left="1.0" right="0.0" top="1.0" bottom="0.0"/>
-                </Texture>
-            </Layer> -->
             <Layer level="OVERLAY">
                 <FontString parentKey="title" inherits="GameFontNormalLarge" text="Disenchant">
                     <Color r="1" g="1" b="1"/>
